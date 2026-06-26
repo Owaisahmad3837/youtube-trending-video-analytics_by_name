@@ -1,8 +1,7 @@
-import os
 from dotenv import load_dotenv
+import os
 load_dotenv()
 
-KEY_API=os.getenv("youtube_api_key")
+youtube_api=os.getenv("YOUTUBE_API_v3")
+database_api=os.getenv("DATABASE_API")
 
-
-DATABASE_URL=os.getenv("DATABASE_URL")

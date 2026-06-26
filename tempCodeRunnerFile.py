@@ -1,62 +1,100 @@
-from extract.video_stats import extract_video_stats
-from extract.videos import extract_video
+from extract.trending_video import extract_trending_video
+from extract.regions import extract_regions
+from transform.video_metric import video_metrics
+from load.database import clear_database
+from load.insert import insert_video
 
-from transform.video_metrics import (
-    calculate_trend_score,
-    calculate_video_metrics
-)
-
-from load.database import (
-    create_table,
-    insert_video
-)
 
 
 
 def main():
 
-    create_table()
+
+    print("ETL Started")
 
 
-    videos = extract_video("hero")
+
+    # remove old data
+
+    clear_database()
+
+
+
+    # get all countries
+
+    countries = extract_regions()
 
 
     print(
-        "video extracted:",
-        len(videos)
+        "Countries:",
+        len(countries)
     )
 
 
-    for video in videos:
 
-        stats=extract_video_stats(
-            video["video_id"]
-        )
-        video.update(stats)
-        # FIRST calculate metrics
-        video = calculate_video_metrics(
-            video
-        )
+    # loop countries
+
+    for country in countries:
 
 
-        # SECOND calculate trend
-        video = calculate_trend_score(
-            video
-        )
+        code = country["country_code"]
 
 
-        print(video)
-
-
-        insert_video(
-            video
-        )
+        name = country["country_name"]
 
 
         print(
-            "Loaded:",
-            video["title"]
+            "Processing:",
+            name,
+            code
         )
+
+
+
+        try:
+
+
+            videos = extract_trending_video(code)
+
+
+
+            print(
+                "Videos:",
+                len(videos)
+            )
+
+
+
+            for video in videos:
+
+
+                clean_video = video_metrics(video)
+
+
+                # add country information
+
+                clean_video["country"] = code
+
+
+
+                insert_video(clean_video)
+
+
+
+        except Exception as e:
+
+
+            print(
+                "Error:",
+                code,
+                e
+            )
+
+
+
+    print(
+        "ETL Finished"
+    )
 
 
 

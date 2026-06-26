@@ -1,36 +1,12 @@
-from googleapiclient.discovery import build
-from config.config import KEY_API
+from extract.youtube_client import get_youtube_client
 
-youtube=build(
-  "youtube",
-  "v3",
-  developerKey=KEY_API
-)
 
-def extract_channel(channel_id):
-  response=youtube.channels().list(
+youtube=get_youtube_client()
+
+def extract_channels(channel_id):
+  response=youtube.videos().list(
     part="snippet,statistics",
-    id=channel_id
+    id=",".join(channel_id)
   ).execute()
 
-  item=response["items"][0]
-
-  channels={
-    "channel_id":
-    channel_id,
-
-    "name":
-    item["snippet"]["title"],
-
-
-    "subscribers":
-    item["statistics"]["subscriberCount"],
-
-
-    "views":
-    item["statistics"]["viewCount"]
-
-
-  }
-
-  return channels
+  return response["items"]

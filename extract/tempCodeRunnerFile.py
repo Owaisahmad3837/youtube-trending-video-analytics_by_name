@@ -1,51 +1,36 @@
-from googleapiclient.discovery import build
-import sys
-import os
-
-sys.path.append(
-    os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-)
-
-from config.config import KEY_API
-youtube=build(
-  "youtube",
-  "v3",
-  developerKey=KEY_API
-)
-
-def extract_videos(keyword):
-  response=youtube.search().list(
-    part="snippet",
-    q=keyword,
-    type="video",
-    maxResults=10
-  ).execute()
+from extract.youtube_client import get_youtube_client
 
 
-  videos=[]
+def extract_trending_video(country_code):
 
-  for item in response["items"]:
-
-    video={
-
-      "video_id":
-      item["id"]["videoId"],
-
-      "title":
-      item["snippet"]["title"],
-
-      "channel_id":
-      item["snippet"]["channelId"],
+    youtube = get_youtube_client()
 
 
-      "channel_title":
-      item["snippet"]["channelTitle"]      
+    response = youtube.videos().list(
 
-    }
+        part="snippet,statistics",
 
-  videos.append(video)
+        chart="mostPopular",
 
-  return videos
+        regionCode=country_code,
+
+        maxResults=50
+
+    ).execute()
 
 
-print(extract_videos("ali"))
+    return response["items"]
+
+
+
+if __name__ == "__main__":
+
+    trending = extract_trending_video("PK")
+
+
+    for video in trending:
+
+        print(
+            video["snippet"]["title"],
+            video["snippet"]["likes"]
+        )

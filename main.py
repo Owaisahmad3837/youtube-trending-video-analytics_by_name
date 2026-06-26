@@ -1,62 +1,129 @@
-from extract.video_stats import extract_video_stats
-from extract.videos import extract_video
+from extract.trending_video import extract_trending_video
+from extract.regions import extract_regions
 
-from transform.video_metrics import (
-    calculate_trend_score,
-    calculate_video_metrics
-)
+from transform.video_metric import video_metrics
 
-from load.database import (
-    create_table,
-    insert_video
-)
+from load.database import clear_database
+from load.insert import insert_video
+from load.create_tables import create_tables
 
 
 
 def main():
 
-    create_table()
+
+    print("ETL Started")
 
 
-    videos = extract_video("hero")
+    # create database table
+
+    create_tables()
+
+
+
+    # remove old data
+
+    clear_database()
+
+
+
+    # get all countries
+
+    countries = extract_regions()
 
 
     print(
-        "video extracted:",
-        len(videos)
+        "Total Countries:",
+        len(countries)
     )
 
 
-    for video in videos:
 
-        stats=extract_video_stats(
-            video["video_id"]
-        )
-        video.update(stats)
-        # FIRST calculate metrics
-        video = calculate_video_metrics(
-            video
-        )
+    total_inserted = 0
 
 
-        # SECOND calculate trend
-        video = calculate_trend_score(
-            video
-        )
+
+    for country in countries:
 
 
-        print(video)
+        code = country["country_code"]
 
+        name = country["country_name"]
 
-        insert_video(
-            video
-        )
 
 
         print(
-            "Loaded:",
-            video["title"]
+            "\nCountry:",
+            name,
+            code
         )
+
+
+
+        try:
+
+
+            videos = extract_trending_video(code)
+
+
+
+            print(
+                "Trending videos:",
+                len(videos)
+            )
+
+
+
+            for video in videos:
+
+
+
+                # transform
+
+                clean_video = video_metrics(video)
+
+
+
+                # add country
+
+                clean_video["country"] = code
+
+
+
+                # insert database
+
+                status = insert_video(
+                    clean_video
+                )
+
+
+
+                if status:
+
+                    total_inserted += 1
+
+
+
+        except Exception as e:
+
+
+            print(
+                "Failed:",
+                code,
+                e
+            )
+
+
+
+    print(
+        "\nTotal inserted:",
+        total_inserted
+    )
+
+
+    print(
+        "ETL Finished"
+    )
 
 
 
